@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Physical AI — Market Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E1416; --panel:#131B20; --panel-hi:#1A242B; --line:#27333B;
+    --ink:#EAF1F3; --dim:#93A2AD; --faint:#5C6B75;
+    --teal:#33D6C1; --teal-dim:#1c726a; --teal-glow:rgba(51,214,193,.13);
+    --amber:#F2B45A; --amber-dim:#7a5a26; --amber-glow:rgba(242,180,90,.13);
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --disp:'Archivo',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);
+    line-height:1.5;
+    background-image:
+      radial-gradient(1200px 600px at 80% -10%, rgba(51,214,193,.05), transparent 60%),
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:auto, 46px 46px, 46px 46px;
+    background-position:0 0, -1px -1px, -1px -1px;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:linear-gradient(180deg, rgba(14,20,22,.86) 0%, rgba(14,20,22,.55) 30%, rgba(14,20,22,.7) 100%);
+  }
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+  /* ---------- hero ---------- */
+  header.hero{padding:64px 0 30px}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--teal);margin:0 0 18px;display:flex;align-items:center;gap:12px}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--teal);display:inline-block}
+  h1{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:1.02;margin:0;
+     font-size:clamp(2.1rem,6vw,3.7rem)}
+  h1 .em{color:var(--teal)}
+  .thesis{max-width:60ch;color:var(--dim);font-size:1.05rem;margin:20px 0 0}
+  .thesis b{color:var(--ink);font-weight:600}
+  .meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:30px;align-items:center}
+  .legend{display:flex;gap:18px;flex-wrap:wrap}
+  .lg{font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:7px}
+  .swatch{width:11px;height:11px;border-radius:3px;border:1px solid}
+  .swatch.t{background:var(--teal-glow);border-color:var(--teal)}
+  .swatch.a{background:var(--amber-glow);border-color:var(--amber)}
+  .search{margin-left:auto;position:relative}
+  .search input{
+    font-family:var(--mono);font-size:.82rem;color:var(--ink);background:var(--panel);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px 9px 32px;width:210px;outline:none;
+    transition:border-color .18s, box-shadow .18s, width .2s}
+  .search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-glow);width:240px}
+  .search input::placeholder{color:var(--faint)}
+  .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--faint)}
+
+  /* ---------- map ---------- */
+  main{padding:8px 0 40px}
+  .stratum{display:grid;grid-template-columns:54px 218px 1fr;gap:0 26px;padding:26px 0;border-top:1px solid var(--line);position:relative}
+  .stratum:first-child{border-top:none}
+  .idx{position:relative;display:flex;justify-content:center}
+  .idx::after{content:"";position:absolute;top:-26px;bottom:-26px;left:50%;width:1px;background:var(--line);transform:translateX(-.5px);z-index:0}
+  .stratum:first-child .idx::after{top:8px}
+  .stratum:last-of-type .idx::after{bottom:auto;height:34px}
+  .badge{position:relative;z-index:1;font-family:var(--mono);font-size:.74rem;font-weight:700;letter-spacing:.04em;
+    width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:var(--panel);border:1px solid var(--line);color:var(--dim);margin-top:2px}
+  .stratum.focus .badge{border-color:var(--amber);color:var(--amber);background:var(--amber-glow)}
+  .stratum.cross .badge{border-style:dashed}
+
+  .lhead h2{font-family:var(--disp);font-weight:700;font-size:1.18rem;letter-spacing:-.01em;margin:2px 0 0;line-height:1.18}
+  .stratum.focus .lhead h2{color:var(--amber)}
+  .ldesc{color:var(--dim);font-size:.86rem;margin:9px 0 0;max-width:30ch}
+  .lcount{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:12px}
+
+  .companies{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:10px;align-content:start}
+  .sub{grid-column:1/-1;margin:6px 0 -2px}
+  .sub:first-child{margin-top:0}
+  .sub-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;color:var(--teal);display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .sub-label.focus{color:var(--amber)}
+  .sub-label::after{content:"";flex:1;height:1px;background:var(--line)}
+  .subgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:10px}
+
+  .card{
+    text-align:left;font-family:var(--body);cursor:pointer;
+    background:var(--panel-hi);border:1px solid var(--line);border-radius:11px;
+    padding:13px 13px 12px;display:flex;flex-direction:column;gap:7px;min-height:78px;
+    transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+  }
+  .card:hover,.card:focus-visible{transform:translateY(-2px);border-color:var(--teal);box-shadow:0 6px 20px -10px var(--teal-glow),0 0 0 1px var(--teal-glow);outline:none}
+  .card .ticker{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;color:var(--faint);text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .added{font-family:var(--mono);font-size:.56rem;letter-spacing:.08em;color:var(--teal);border:1px solid var(--teal-dim);border-radius:5px;padding:1px 4px;text-transform:uppercase}
+  .card .cname{font-weight:600;font-size:.96rem;color:var(--ink);line-height:1.2}
+  .card .ctag{font-family:var(--mono);font-size:.63rem;letter-spacing:.04em;color:var(--dim);margin-top:auto}
+  .card.focus{border-color:var(--amber);background:linear-gradient(180deg,var(--amber-glow),transparent)}
+  .card.focus:hover,.card.focus:focus-visible{box-shadow:0 6px 20px -10px var(--amber-glow),0 0 0 1px var(--amber-glow)}
+  .card.focus .cname{color:var(--amber)}
+  .card.focus .ctag{color:var(--amber)}
+  .card .dot{position:absolute}
+  .card.hide{display:none}
+  .sub.hide,.stratum.hide{display:none}
+
+  .noresults{display:none;font-family:var(--mono);font-size:.85rem;color:var(--dim);padding:40px 0;text-align:center}
+  .noresults.show{display:block}
+
+  /* ---------- footer ---------- */
+  footer{border-top:1px solid var(--line);padding:24px 0 60px;color:var(--faint);font-size:.78rem;max-width:78ch}
+  footer .flywheel{font-family:var(--mono);color:var(--dim);font-size:.74rem;letter-spacing:.04em;margin-bottom:12px}
+
+  /* ---------- drawer ---------- */
+  .backdrop{position:fixed;inset:0;background:rgba(6,10,11,.62);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+  .backdrop.open{opacity:1;pointer-events:auto}
+  .drawer{
+    position:fixed;top:0;right:0;height:100%;width:min(452px,100%);z-index:21;
+    background:var(--panel);border-left:1px solid var(--line);
+    transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.15,1);
+    display:flex;flex-direction:column;box-shadow:-30px 0 60px -30px rgba(0,0,0,.7)}
+  .drawer.open{transform:translateX(0)}
+  .drawer .dtop{padding:26px 26px 18px;border-bottom:1px solid var(--line);position:relative}
+  .drawer .dticker{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+  .drawer.focus-co .dticker{color:var(--amber)}
+  .drawer h3{font-family:var(--disp);font-weight:700;font-size:1.6rem;letter-spacing:-.01em;margin:9px 0 0;line-height:1.05}
+  .drawer .dlayer{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:11px;letter-spacing:.04em}
+  .drawer .dlayer .chip{color:var(--ink);border:1px solid var(--line);border-radius:20px;padding:2px 9px;margin-left:2px}
+  .close{position:absolute;top:20px;right:20px;width:34px;height:34px;border-radius:9px;background:var(--panel-hi);border:1px solid var(--line);color:var(--dim);cursor:pointer;font-size:1.1rem;line-height:1;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .close:hover,.close:focus-visible{color:var(--ink);border-color:var(--teal);outline:none}
+  .dbody{padding:22px 26px 30px;overflow-y:auto;flex:1}
+  .field{margin-bottom:22px}
+  .field .flabel{font-family:var(--mono);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;display:flex;align-items:center;gap:9px}
+  .field .flabel::before{content:"";width:14px;height:1px;background:var(--teal)}
+  .drawer.focus-co .field .flabel::before{background:var(--amber)}
+  .field p{margin:0;color:var(--ink);font-size:.95rem}
+  .field.sells p{color:var(--dim)}
+  .dnote{font-family:var(--mono);font-size:.76rem;line-height:1.5;color:var(--amber);background:var(--amber-glow);border:1px solid var(--amber-dim);border-radius:9px;padding:11px 13px;margin-top:4px}
+  .statrow{display:flex;gap:12px;margin-bottom:22px}
+  .stat{flex:1;background:var(--panel-hi);border:1px solid var(--line);border-radius:9px;padding:11px 13px;min-width:0}
+  .stat .slabel{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+  .stat .sval{font-family:var(--disp);font-size:.92rem;font-weight:600;color:var(--ink);line-height:1.2}
+
+  @media (max-width:880px){
+    .stratum{grid-template-columns:1fr;gap:14px;padding:24px 0}
+    .idx{justify-content:flex-start}
+    .idx::after{display:none}
+    .badge{margin-top:0}
+    .ldesc,.lhead h2{max-width:none}
+    .search{margin-left:0;width:100%}
+    .search input,.search input:focus{width:100%}
+    header.hero{padding:44px 0 22px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+    body{background-image:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <h1>Physical AI <span class="em">Market Map</span></h1>
+    <p class="thesis">June 2026 - Kevin Stephen</p>
+    <div class="meta">
+      <div class="legend">
+        <span class="lg"><span class="swatch t"></span>through-line</span>
+        <span class="lg"><span class="swatch a"></span>data layer focus</span>
+        <span class="lg"><span class="added">list</span>from your shortlist</span>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input id="q" type="search" placeholder="filter companies" aria-label="Filter companies by name">
+      </div>
+    </div>
+  </header>
+
+  <main id="map" aria-label="Physical AI market map by layer"></main>
+  <p class="noresults" id="noresults">No companies match that filter.</p>
+
+  <footer>
+    <p class="flywheel">↻ data flywheel — deployed robots generate episodes → data layer → better models → wider deployment</p>
+    Concise orientation summaries, not investment advice. Funding stage, total raised, key investors, and founding-team fields are best-effort from public sources (knowledge through early 2026 plus recent searches); many smaller and YC P26 companies are marked "not publicly disclosed," and figures with "~", "incl.", or "reportedly" are approximate — verify before acting. Logos are representative, not exhaustive. Built around PerfectBit (YC Spring 2026) as the worked example in the verified-data segment.
+  </footer>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-name" tabindex="-1">
+  <div class="dtop">
+    <button class="close" id="close" aria-label="Close details">✕</button>
+    <div class="dticker" id="d-ticker"></div>
+    <h3 id="d-name"></h3>
+    <div class="dlayer" id="d-layer"></div>
+  </div>
+  <div class="dbody">
+    <div class="field"><div class="flabel">What they do</div><p id="d-blurb"></p></div>
+    <div class="field"><div class="flabel">Core differentiation</div><p id="d-diff"></p></div>
+    <div class="field"><div class="flabel">Product</div><p id="d-product"></p></div>
+    <div class="field sells"><div class="flabel">Who they sell to</div><p id="d-sells"></p></div>
+    <div class="field"><div class="flabel">Founding team &amp; background</div><p id="d-team"></p></div>
+    <div class="statrow">
+      <div class="stat"><div class="slabel">Funding stage</div><div class="sval" id="d-stage"></div></div>
+      <div class="stat"><div class="slabel">Total funding</div><div class="sval" id="d-total"></div></div>
+    </div>
+    <div class="field"><div class="flabel">Key investors</div><p id="d-investors"></p></div>
+    <div id="d-note-wrap" class="field" style="display:none"><div class="flabel">Note</div><div class="dnote" id="d-note"></div></div>
+  </div>
+</aside>
+
+<script>
+const LAYERS = [
+  { idx:"L1", name:"Applications & deployment", desc:"Where the stack meets a customer and earns revenue.", companies:[
+    {n:"Waymo",t:"AV / robotaxi",tag:"Autonomous driving",blurb:"Alphabet's self-driving unit, running a commercial robotaxi service across several US cities.",product:"The Waymo Driver autonomy system and the Waymo One ride-hailing app.",sells:"Riders directly (B2C), with freight and OEM pilots alongside."},
+    {n:"Wayve",t:"AV 2.0",tag:"Autonomous driving",blurb:"UK developer of end-to-end, learning-based driving intelligence designed to generalize across vehicles.",product:"The Wayve AI Driver — an embodied foundation model for assisted and automated driving.",sells:"Automakers and fleet operators that license the software rather than buy a vehicle."},
+    {n:"Symbotic",t:"Warehouse",tag:"Warehouse automation",blurb:"AI-powered robotics that automate how goods move through large distribution centers.",product:"End-to-end warehouse systems pairing autonomous robots with orchestration software.",sells:"Large retailers and wholesalers; Walmart is its anchor customer."},
+    {n:"Dexterity",t:"Logistics",tag:"Logistics robotics",blurb:"Builds physically intelligent robots for warehouses and parcel logistics — picking, palletizing, truck loading.",product:"Robotic cells driven by a physical-AI control stack.",sells:"Parcel carriers, third-party logistics providers, and manufacturers."},
+    {n:"Carbon Robotics",t:"Agtech",tag:"Agriculture",blurb:"Computer-vision robotics for farming, best known for killing weeds with lasers instead of chemicals.",product:"The LaserWeeder — vision finds weeds and lasers destroy them in real time.",sells:"Commercial farms and large-scale growers."}
+  ]},
+  { idx:"L2", name:"Embodiment / robot hardware", desc:"The bodies — and the highest-value sensor for collecting real-world data.", companies:[
+    {n:"Figure",t:"Humanoid",tag:"Humanoid",blurb:"US humanoid company building general-purpose bipedal robots for work.",product:"Figure humanoids paired with its in-house Helix vision-language-action model.",sells:"Industrial and logistics enterprises, with a stated path toward the home.",note:"Among the most heavily funded humanoid players."},
+    {n:"1X",t:"Humanoid",tag:"Humanoid",blurb:"Humanoid company focused on safe, human-centric robots for the home.",product:"NEO home humanoid, with the Redwood AI model and teleoperation-assisted operation.",sells:"Consumers (home) plus earlier enterprise deployments."},
+    {n:"Tesla Optimus",t:"Humanoid",tag:"Humanoid",blurb:"Tesla's humanoid program, leveraging its vehicle AI and manufacturing base.",product:"The Optimus general-purpose humanoid.",sells:"Initially Tesla's own factories; future commercial and consumer sale intended."},
+    {n:"Apptronik",t:"Humanoid",tag:"Humanoid",blurb:"Humanoid company spun out of UT Austin, focused on structured industrial work.",product:"The Apollo humanoid robot.",sells:"Manufacturing and logistics enterprises via pilots.",note:"$520M Series A extension (2026), ~$5.5B valuation."},
+    {n:"Agility Robotics",t:"Humanoid",tag:"Humanoid",blurb:"Maker of one of the first humanoids deployed in real warehouses.",product:"Digit — a bipedal robot for moving totes and bins.",sells:"Warehouse and logistics operators."},
+    {n:"Boston Dynamics",t:"Robotics",tag:"Robotics",blurb:"Hyundai-owned pioneer known for highly dynamic machines.",product:"Atlas (electric humanoid), Spot (quadruped), and Stretch (warehouse).",sells:"Industrial inspection, logistics, and research customers."},
+    {n:"Unitree",t:"Humanoid",tag:"Humanoid / quadruped",blurb:"Chinese maker of notably low-cost humanoids and quadrupeds.",product:"G1/H1 humanoids and Go2 quadrupeds.",sells:"Researchers, developers, education, and price-sensitive industrial buyers."},
+    {n:"NEURA Robotics",t:"Cognitive",tag:"Cognitive robots",blurb:"German developer of cognitive robots and an app ecosystem for them.",product:"The 4NE-1 humanoid, MiPA service robot, and the Neuraverse platform.",sells:"Industrial and service-sector enterprises.",note:"$1.2B Series C (2026), Europe's most-funded humanoid effort."},
+    {n:"Eden Robotics",t:"RaaS",tag:"General-purpose RaaS",added:true,blurb:"Autonomous general-purpose robots offered as a service for warehouses and manufacturing.",product:"Robots-as-a-service for material handling and production tasks.",sells:"Warehouse and manufacturing operators.",note:"YC P26 · your sheet verdict 4/4. New/early; detail from your notes."},
+    {n:"InLoop Robotics",t:"Robot arms",tag:"Manipulation",added:true,blurb:"Robotic arms for picking and packing orders in fulfillment.",product:"Pick-and-pack robotic arm systems.",sells:"E-commerce and warehouse fulfillment operators.",note:"YC P26 · your sheet verdict 2/4 (lower conviction on your sheet). New/early."}
+  ]},
+  { idx:"L3", name:"Foundation models", desc:"The robot brains — vision-language-action policies that turn perception into action.", companies:[
+    {n:"Physical Intelligence",t:"π / VLA",tag:"VLA foundation model",blurb:"Building a single, hardware-agnostic policy that can control many robots across many tasks.",product:"The π0 / π0.5 vision-language-action models — pitched as an operating system for robots.",sells:"Robot makers and enterprises licensing the model layer.",note:"Raised $400M+; reportedly in talks above an $11B valuation."},
+    {n:"Skild AI",t:"Robot brain",tag:"Robot brain",blurb:"Developing a general-purpose robotic foundation model that transfers across embodiments.",product:"Skild Brain — a shared intelligence layer for diverse robots.",sells:"Robot OEMs and industrial deployers.",note:"$1.4B raised in early 2026; total funding over $2B."},
+    {n:"NVIDIA GR00T",t:"Platform",tag:"Platform + model",blurb:"NVIDIA's humanoid foundation-model effort, bundled with its full robotics platform.",product:"Isaac GR00T N-series models, blueprints, and reference workflows.",sells:"Humanoid and robotics developers across the NVIDIA ecosystem."},
+    {n:"Gemini Robotics",t:"DeepMind",tag:"VLA foundation model",blurb:"Google DeepMind's embodied models bringing Gemini's reasoning to physical action.",product:"Gemini Robotics and Gemini Robotics-ER (embodied reasoning).",sells:"Research and selected robotics partners under controlled access."},
+    {n:"Generalist AI",t:"Embodied FM",tag:"Embodied foundation model",blurb:"Startup pursuing general-purpose robotic intelligence trained on large-scale data.",product:"General-purpose embodied foundation models (early stage).",sells:"Robotics partners; early go-to-market."},
+    {n:"General Instinct",t:"Edge physical AI",tag:"Deployable model / runtime",added:true,blurb:"Deployable physical-AI models that run on-device across different robots.",product:"Physical-AI models packaged to run on edge hardware (reportedly in Tesla- and Apple-class robots).",sells:"Robot and device makers needing on-device intelligence; ~$280K committed ARR.",note:"YC P26 · your sheet verdict 4/4. Straddles foundation models and edge runtime."}
+  ]},
+  { idx:"L4", name:"Data", desc:"The fuel, organized by how it is generated. The segment PerfectBit competes in.", focus:true, subsegments:[
+    { name:"Teleoperation & real-world", companies:[
+      {n:"Cortex AI",t:"Real-world",tag:"Real-world data",blurb:"Builds large-scale real-world workplace and egocentric datasets for embodied AI.",product:"Egocentric human video with pose/depth labels, robot trajectories, human-in-the-loop rollouts, and a data marketplace.",sells:"Frontier labs training robotics foundation models."},
+      {n:"Scale AI",t:"Data engine",tag:"Data ops",blurb:"The large-scale data-labeling company, now extending into physical-AI data.",product:"Annotation, RLHF, and data-pipeline services, including robotics data.",sells:"AI labs, enterprises, and government."},
+      {n:"Humanola",t:"Teleop data",tag:"Teleoperation data",added:true,blurb:"Teleoperation and robot-learning data platform for collecting embodied-AI demonstrations at scale.",product:"A platform and operations layer for capturing action-labeled teleoperated robot demonstrations.",sells:"Robotics and embodied-AI teams that need demonstration data.",note:"Brooklyn, US · Seed (~$2.5M). Limited public detail beyond its own description."},
+      {n:"Relling",t:"Multimodal",tag:"Multimodal capture",added:true,blurb:"Builds multimodal robotics datasets — video, depth, and audio — fused across multiple sensors.",product:"Multi-sensor-fusion datasets for robotics perception and learning.",sells:"Robotics developers needing richly labeled real-world multimodal data.",note:"Los Angeles, US · Pre-seed (~$5.5M). Early-stage; limited public detail."}
+    ]},
+    { name:"Human / egocentric video", companies:[
+      {n:"Ego4D",t:"Dataset",tag:"Open dataset",blurb:"Large academic egocentric-video datasets widely used to pretrain perception and action models.",product:"Massive first-person video corpora with rich annotations.",sells:"Open to researchers — a shared resource rather than a vendor."},
+      {n:"Hub",t:"Real-world data",tag:"Egocentric data",added:true,blurb:"Real-world training data for frontier AI labs and robotics — egocentric POV video and image pairs with enrichment and human-in-the-loop QA.",product:"Egocentric data pipelines with human-in-the-loop quality control.",sells:"Frontier labs and robotics teams — customers include Figure AI (a ~$1M agreement), Adobe, and Mercor.",note:"YC P26 · your sheet verdict 4/4 ('worth talking to for physical AI thesis'). Direct comp to Cortex AI and Lightwheel's EgoSuite."}
+    ]},
+    { name:"Sim-generated", companies:[
+      {n:"NVIDIA Data Factory",t:"Synthetic",tag:"Synthetic data",blurb:"NVIDIA's reference pipeline for generating, augmenting, and evaluating physical-AI data at scale.",product:"The Physical AI Data Factory Blueprint, Omniverse Replicator, and Cosmos generation (Gretel folded in).",sells:"Robotics and AV developers, delivered through cloud partners like Azure and Nebius.",note:"The incumbent straddling PerfectBit's exact segment."},
+      {n:"Parallel Domain",t:"AV synth",tag:"Synthetic data (AV)",blurb:"Synthetic-data platform for autonomous-vehicle and perception training.",product:"Procedurally generated, labeled sensor data across camera and LiDAR.",sells:"AV, ADAS, and perception teams."},
+      {n:"Applied Intuition",t:"Sim/validate",tag:"Sim + validation",blurb:"Autonomy software for simulating, validating, and developing self-driving and off-road systems.",product:"Simulation, data, and validation tooling for autonomy.",sells:"Automakers, AV programs, and defense."},
+      {n:"AgiBot",t:"Genie Sim",tag:"Sim data",blurb:"Chinese embodied-AI company that open-sources large simulation datasets.",product:"Genie Sim and the AgiBot World dataset.",sells:"Robotics developers via an open ecosystem."},
+      {n:"Lightwheel",t:"PhysAI infra",tag:"Sim + data infra",added:true,blurb:"Physical-AI data and simulation infrastructure spanning simulation-ready assets, egocentric human data, and evaluation, on a World / Behavior / Eval architecture.",product:"SimReady asset library, EgoSuite egocentric data (20,000+ hours/week), and the RoboFinals evaluation platform.",sells:"Robot and foundation-model builders; partners include Figure AI and World Labs.",note:"Beijing · ~RMB 1B raised (Series A++/A+++, 2026); among the most-funded data-infra players. Spans teleop and eval as well as sim."},
+      {n:"Bifrost AI",t:"Synthetic 3D",tag:"Synthetic data",added:true,blurb:"Generates synthetic, labeled datasets in physically accurate 3D worlds with programmable sensor emulation.",product:"Alchemy — a procedural 3D-rendering synthetic-data platform with tunable sensors, environments, and weather.",sells:"Robotics, AV, aerospace, maritime, and defense teams (e.g., U.S. Air Force, NTT Data).",note:"San Francisco · founded 2020 · Series A."},
+      {n:"Duality AI",t:"Digital twin",tag:"Digital-twin sim",added:true,blurb:"Digital-twin simulation platform that generates on-demand synthetic data and validates autonomy.",product:"Falcon — an Unreal-Engine-based digital-twin simulator with virtual sensors (LiDAR, RGB, depth, IMU, GPS).",sells:"Defense and robotics programs — U.S. Army, DARPA, NASA JPL — and enterprises like Palantir.",note:"San Mateo · Series A · 70+ patents. Borderline between this layer and simulation tooling."},
+      {n:"Repli5",t:"CV synthetic",tag:"Synthetic data (CV)",added:true,blurb:"Synthetic-data generation for computer-vision perception, combining 3D simulation with generative AI.",product:"A platform producing augmented camera data, task maps, and realistic textures for perception models.",sells:"Automotive/ADAS, UAV, industrial, and defense perception teams.",note:"Gothenburg, Sweden · Seed."},
+      {n:"Mantis",t:"Physics synth",tag:"Synthetic data",added:true,blurb:"Physics-based synthetic-data generation aimed at low-resource ML applications.",product:"Physics-grounded synthetic datasets for teams without large real-world corpora.",sells:"ML teams working in data-constrained domains.",note:"Seed (~$5.3M). Limited public detail beyond its own description."},
+      {n:"SCAILAB",t:"Game-engine",tag:"Synthetic data",added:true,blurb:"Game-engine-based toolchain for creating synthetic training data for robotics perception.",product:"A toolchain that builds perception datasets from game-engine scenes.",sells:"Robotics-perception teams.",note:"Västerås, Sweden · early-stage. Limited public detail."}
+    ]},
+    { name:"World-model / neural-generated", companies:[
+      {n:"World Labs",t:"World model",tag:"World model",blurb:"Fei-Fei Li's company building large world models for spatial intelligence.",product:"Models that generate and reason over interactive 3D worlds.",sells:"Developers and creators today; robotics and AV applications longer-term."},
+      {n:"Decart",t:"World model",tag:"World model",blurb:"Builds real-time generative world models and video.",product:"Real-time interactive world-model generation.",sells:"Developers and interactive-media builders."},
+      {n:"Genie 3",t:"DeepMind",tag:"World model",blurb:"A world model that generates interactive, photorealistic environments on demand.",product:"Genie 3 — used, for example, to power Waymo's edge-case driving simulation.",sells:"Internal and select partners such as Waymo."},
+      {n:"DiffuseDrive",t:"Diffusion",tag:"Generative data",added:true,blurb:"Uses proprietary diffusion models to turn existing real data into photorealistic synthetic data, filling the gaps a dataset is missing.",product:"A generative-AI data engine that analyzes data, finds gaps, and generates targeted photorealistic imagery.",sells:"Automotive/AV, robotics, aerospace, and defense teams, including Fortune 500 deployments.",note:"San Francisco (founded in Hungary) · Seed (~$3.5–4.5M); ex-Bosch/Porsche founders."}
+    ]},
+    { name:"Verified / correct-by-construction", focus:true, companies:[
+      {n:"PerfectBit",t:"Verified",tag:"Verified synthetic",focus:true,blurb:"Generates correct-by-construction training data — pixels and text whose labels are guaranteed by physics simulators and other oracles, not human annotation.",product:"Verifier-grounded datasets for frontier and physical-AI model teams.",sells:"Frontier AI labs and the emerging middle market of model-only physical-AI startups.",note:"YC Spring 2026 · the company this map was built around."},
+      {n:"Prime Intellect",t:"RL envs",tag:"RL environments",blurb:"Builds verifiable RL environments and decentralized training infrastructure (skews digital/agentic).",product:"An environments hub and distributed training stack with verifiable rewards.",sells:"AI labs and the open-source community."},
+      {n:"Mechanize",t:"RL envs",tag:"RL environments",blurb:"Creates reinforcement-learning environments aimed at automating economically useful tasks (digital-first).",product:"RL environments and evaluations for agent training.",sells:"AI labs; early stage."}
+    ]}
+  ]},
+  { idx:"L5", name:"Simulation engines & tooling", desc:"The hand-built physics simulators and platforms that sim-generated data is built on — analytic engines, as distinct from the learned world models one layer up.", companies:[
+    {n:"NVIDIA Isaac Sim",t:"Sim platform",tag:"Sim platform",blurb:"The dominant robotics physics-simulation stack, built on Omniverse.",product:"Isaac Sim and Isaac Lab on the Omniverse platform. (NVIDIA's Cosmos world models sit with the data layer above.)",sells:"Robotics and AV developers and enterprises."},
+    {n:"Genesis",t:"Engine",tag:"Physics engine",blurb:"A fast, generative physics-simulation platform for robotics and embodied AI.",product:"The open-source Genesis simulation engine.",sells:"Researchers and developers (open-source)."},
+    {n:"MuJoCo",t:"Engine",tag:"Physics engine",blurb:"Widely used physics engine for contact-rich control and RL, open-sourced under DeepMind.",product:"The MuJoCo simulator.",sells:"Free and open — research and robotics labs."},
+    {n:"Drake",t:"Toolbox",tag:"Physics / planning",blurb:"Toolbox for model-based design and verification of robots, from Toyota Research.",product:"The Drake simulation and planning library.",sells:"Open — research and advanced robotics teams."}
+  ]},
+  { idx:"L6", name:"Compute & silicon", desc:"Training compute in the datacenter; inference on the robot.", companies:[
+    {n:"NVIDIA",t:"Silicon",tag:"Silicon + compute",blurb:"Supplies both the training compute and the on-robot inference chips for physical AI.",product:"Datacenter GPUs for training; Jetson Thor modules for edge inference.",sells:"Effectively the entire stack — labs, robot makers, and clouds.",note:"The vertically integrated incumbent; appears across four layers of this map."},
+    {n:"Hailo",t:"Edge AI",tag:"Edge AI silicon",blurb:"Designs low-power edge AI processors for real-time inference on devices.",product:"Hailo AI accelerators for vision and edge workloads.",sells:"Robotics, automotive, and industrial OEMs."},
+    {n:"Nebius",t:"AI cloud",tag:"AI cloud",blurb:"AI-cloud provider offering full-stack training and simulation infrastructure.",product:"GPU cloud plus integrated NVIDIA physical-AI tooling.",sells:"AI and robotics startups and enterprises."}
+  ]},
+  { idx:"L0", name:"Cross-cutting", desc:"Spans every layer: middleware, fleet ops, safety, data ops, open datasets.", cross:true, companies:[
+    {n:"Intrinsic",t:"Robot SW",tag:"Robotics software",blurb:"Alphabet's industrial-robotics software company, simplifying how robots are programmed.",product:"A software platform for industrial robotics.",sells:"Manufacturers and system integrators."},
+    {n:"Encord",t:"Data ops",tag:"Data ops",blurb:"Data-development platform for labeling and managing multimodal training data, including video.",product:"Annotation and data-curation tooling.",sells:"AI and computer-vision teams."},
+    {n:"Open X-Embodiment",t:"Dataset",tag:"Open dataset",blurb:"A cross-institution collaboration pooling robot demonstration data across many labs and embodiments.",product:"A shared, standardized robot-learning dataset.",sells:"Open resource for the research community."},
+    {n:"Shotwell AI",t:"Robotics obs.",tag:"Observability",added:true,blurb:"Observability layer for robotics — monitoring and debugging deployed robot fleets.",product:"A robotics observability platform.",sells:"Robotics teams running fleets; ~$300K ARR.",note:"YC P26 · your sheet verdict 4/4. Founders from Tesla and Hugging Face."},
+    {n:"Synphony",t:"PhysAI OS",tag:"Robot OS / deployment",added:true,blurb:"An operating system for physical-AI deployments, initially aimed at bringing robots to farming.",product:"A deployment and runtime OS for physical-AI systems.",sells:"Robotics deployers (early; agriculture focus).",note:"YC P26 · your sheet verdict 3/4. Founder is one of NVIDIA's youngest researchers."}
+  ]}
+];
+
+const EXTRA = {
+"Waymo":{diff:"The most real-world autonomous miles and a commercial robotaxi service already at city scale.",team:"Grew out of the 2009 Google self-driving project; co-led by Tekedra Mawakana and Dmitri Dolgov as an Alphabet subsidiary.",stage:"Alphabet subsidiary (raises external rounds)",total:"~$11B+ external (incl. a $5.6B round in 2024)",inv:"Alphabet, plus incl. Andreessen Horowitz, Silver Lake, Fidelity, Tiger Global, T. Rowe Price."},
+"Wayve":{diff:"End-to-end, camera-first learned driving (AV2.0) with no HD maps or lidar, built to generalize across vehicles.",team:"Founded 2017 in Cambridge, UK by Alex Kendall (CEO) and Amar Shah, from Cambridge's ML lab.",stage:"Series C",total:"~$1.3B",inv:"SoftBank (lead), incl. NVIDIA, Microsoft, Eclipse Ventures."},
+"Symbotic":{diff:"End-to-end AI warehouse automation deployed at the largest retail scale, anchored by Walmart.",team:"Founded 2007 by Rick Cohen (chairman/CEO), of the C&S Wholesale Grocers family.",stage:"Public (NASDAQ: SYM)",total:"Public via 2022 SPAC listing",inv:"Walmart and SoftBank among large holders; founder-controlled."},
+"Dexterity":{diff:"Full-body physical-AI control for industrial manipulation at production speed.",team:"Founded 2017 by Samir Menon (CEO), a Stanford robotics PhD.",stage:"Series B+ (reported ~$1.65B valuation)",total:"~$170M+",inv:"incl. Lightspeed, Kleiner Perkins, Sumitomo, Obvious Ventures."},
+"Carbon Robotics":{diff:"Turns computer vision into a physical actuator: lasers that kill weeds, replacing chemicals and labor.",team:"Founded 2018 by Paul Mikesell (CEO), previously co-founder of Isilon Systems.",stage:"Series D",total:"~$157M+",inv:"incl. BOND, Anthos Capital, Fuse, NVIDIA (NVentures), Sozo."},
+"Figure":{diff:"Best-capitalized pure-play humanoid, with in-house Helix VLA and BotQ manufacturing.",team:"Founded 2022 by Brett Adcock (ex-Vettery, ex-Archer Aviation); team drawn from Boston Dynamics, Tesla, Apple.",stage:"Series C (~$39B valuation, 2025)",total:"~$1.9B",inv:"Parkway VC (lead), incl. NVIDIA, Microsoft, OpenAI Startup Fund, Intel Capital, Jeff Bezos, Brookfield, Qualcomm, LG, Salesforce."},
+"1X":{diff:"Consumer-first home humanoid (NEO), vertically integrated actuators, teleop-assisted data flywheel.",team:"Founded 2014 in Norway (as Halodi) by Bernt Bornich (CEO).",stage:"Series B; raising a large Series C (targeting ~$10B val)",total:"~$126M disclosed (Series B $100M, 2024)",inv:"incl. OpenAI Startup Fund, EQT Ventures, Tiger Global, Samsung NEXT."},
+"Tesla Optimus":{diff:"Leverages Tesla's vehicle AI, FSD compute, and mass manufacturing for a low-cost humanoid.",team:"A Tesla program led by Elon Musk; unveiled 2021.",stage:"Internal program (parent: Tesla, NASDAQ: TSLA)",total:"Self-funded by Tesla",inv:"Tesla."},
+"Apptronik":{diff:"Humanoid optimized for structured industrial work; UT Austin robotics heritage.",team:"Founded 2016 out of UT Austin's Human Centered Robotics Lab by Jeff Cardenas (CEO) and Nick Paine.",stage:"Series A (extended)",total:"~$870M (incl. $350M Series A + $520M extension)",inv:"incl. B Capital, Capital Factory, Google, Mercedes-Benz, ARK Invest."},
+"Agility Robotics":{diff:"First humanoid (Digit) in real warehouse operations, with proven logistics pilots.",team:"Founded 2015 out of Oregon State by Jonathan Hurst (CTO) and Damion Shelton.",stage:"Series B+ (reportedly raising a large round)",total:"~$180M+ disclosed",inv:"incl. DCVC, Playground Global, Amazon Industrial Innovation Fund, Schaeffler."},
+"Boston Dynamics":{diff:"Decades of dynamic-locomotion R&D; Atlas (now electric), Spot, and Stretch in commercial use.",team:"Founded 1992 as an MIT spinoff by Marc Raibert; now owned by Hyundai Motor Group.",stage:"Subsidiary (Hyundai)",total:"Acquired by Hyundai in 2021 (~$1.1B valuation)",inv:"Hyundai Motor Group (controlling); previously SoftBank, Google."},
+"Unitree":{diff:"Aggressively low-cost humanoids and quadrupeds (G1 under ~$16k) on China supply-chain advantages.",team:"Founded 2016 by Wang Xingxing (CEO), a quadruped-robotics pioneer.",stage:"Late-stage, pursuing an IPO",total:"~$1B+ reportedly (Series C, 2025)",inv:"incl. Tencent, Alibaba, Geely, CITIC, HongShan."},
+"NEURA Robotics":{diff:"Cognitive robots plus a Neuraverse app ecosystem; Europe's most-funded humanoid effort.",team:"Founded 2019 in Germany by David Reger (CEO).",stage:"Series C",total:"~$1.2B (incl. a ~$1.2B Series C, 2026)",inv:"Series C lead not fully disclosed; strategic partner NVIDIA."},
+"Eden Robotics":{diff:"General-purpose robots delivered as a service for warehouse and manufacturing.",team:"YC P26; founder background not publicly detailed.",stage:"Seed (YC P26)",total:"Not publicly disclosed",inv:"Y Combinator."},
+"InLoop Robotics":{diff:"Robotic arms specialized for pick-and-pack fulfillment.",team:"YC P26; founder background not publicly detailed.",stage:"Seed (YC P26)",total:"Not publicly disclosed",inv:"Y Combinator."},
+"Physical Intelligence":{diff:"A single hardware-agnostic policy (pi0) aiming to control any robot on any task.",team:"Founded 2024 by Karol Hausman (CEO), Sergey Levine, Chelsea Finn, Brian Ichter and others from Google/Stanford/Berkeley.",stage:"Raising at >$11B valuation",total:"~$400M+",inv:"incl. Thrive Capital, Lux Capital, OpenAI, Jeff Bezos, Khosla, Sequoia, Redpoint."},
+"Skild AI":{diff:"A general robot-brain foundation model designed to transfer across embodiments.",team:"Founded 2023 by CMU professors Deepak Pathak (CEO) and Abhinav Gupta.",stage:"Series B+ (reported ~$4.5B val, 2026)",total:">$2B (incl. $1.4B in early 2026)",inv:"incl. Lightspeed, Coatue, SoftBank, Jeff Bezos, NVIDIA, Samsung, Sequoia."},
+"NVIDIA GR00T":{diff:"Humanoid foundation models bundled with NVIDIA's full compute and simulation platform.",team:"An NVIDIA initiative (Project GR00T) within NVIDIA Robotics.",stage:"Part of NVIDIA",total:"Internal",inv:"NVIDIA."},
+"Gemini Robotics":{diff:"Brings Gemini's multimodal reasoning to embodied action (Gemini Robotics-ER).",team:"A Google DeepMind effort (DeepMind led by Demis Hassabis).",stage:"Part of Alphabet/DeepMind",total:"Internal",inv:"Alphabet."},
+"Generalist AI":{diff:"General-purpose robotic intelligence learned from large-scale data across embodiments.",team:"Founded 2024 by Pete Florence and Andy Zeng, ex-Google DeepMind robotics researchers.",stage:"Early (seed/Series A)",total:"Reported early round; amount not confirmed",inv:"Not all publicly disclosed."},
+"General Instinct":{diff:"Deployable physical-AI models that run on-device across different robots.",team:"YC P26; founder background not publicly detailed.",stage:"Seed (YC P26; ~$280K committed ARR)",total:"Not publicly disclosed",inv:"Y Combinator."},
+"Cortex AI":{diff:"Combines egocentric data, real robot trajectories, and human-in-the-loop rollouts in one marketplace.",team:"YC-backed; founder background not widely public.",stage:"Seed (YC)",total:"Not publicly disclosed",inv:"Y Combinator."},
+"Scale AI":{diff:"The largest data engine, now extending to physical AI, with deep enterprise and government relationships.",team:"Founded 2016 by Alexandr Wang (CEO) and Lucy Guo; Wang joined Meta in 2025.",stage:"Late-stage (Meta took ~49% in 2025)",total:"~$1.6B raised; Meta invested ~$14B for ~49% (2025)",inv:"incl. Accel, Index, Founders Fund, Tiger Global, Coatue; Meta (2025 stake)."},
+"Humanola":{diff:"Teleoperation and robot-learning data platform for embodied demonstrations at scale.",team:"YC P26; not publicly detailed.",stage:"Seed (per your sheet)",total:"~$2.5M (per your sheet)",inv:"Not publicly disclosed."},
+"Relling":{diff:"Multimodal robotics datasets (video, depth, audio) via multi-sensor fusion.",team:"Not publicly detailed.",stage:"Pre-seed (per your shortlist)",total:"~$5.5M (per your shortlist)",inv:"Not publicly disclosed."},
+"Ego4D":{diff:"The benchmark academic egocentric corpus: scale and standardization, free to use.",team:"A consortium led by Meta AI with 13+ universities.",stage:"Academic / open",total:"Non-commercial",inv:"Academic consortium."},
+"Hub":{diff:"Egocentric real-world data with enrichment and human-in-the-loop QA; landed a $1M Figure AI agreement.",team:"YC P26; founder background not publicly detailed.",stage:"Seed (YC P26)",total:"Not publicly disclosed",inv:"Y Combinator; commercial customers Figure AI, Adobe, Mercor."},
+"NVIDIA Data Factory":{diff:"An open reference architecture for generate-augment-evaluate data on NVIDIA's full stack.",team:"An NVIDIA product line (Cosmos + Omniverse + Gretel).",stage:"Part of NVIDIA",total:"Internal (acquired Gretel for ~$320M)",inv:"NVIDIA."},
+"Lightwheel":{diff:"Three-layer World/Behavior/Eval data infra: SimReady assets, EgoSuite, and RoboFinals eval.",team:"China-based; team from autonomous driving and simulation (English-language detail limited).",stage:"Series A++/A+++ (2026)",total:"~RMB 1B (~$140M)",inv:"Not all disclosed; partners Figure AI and World Labs."},
+"Bifrost AI":{diff:"Programmable sensor emulation inside physically accurate 3D worlds (Alchemy), strong defense/aerospace footing.",team:"Founded 2020; San Francisco.",stage:"Series A",total:"~$8-13M",inv:"Not all disclosed; customers incl. U.S. Air Force, NTT Data."},
+"Duality AI":{diff:"Unreal-Engine digital twins with high-fidelity virtual sensors; deep defense and government deployments.",team:"Founded 2018; San Mateo; team from Unreal/EA, robotics, and defense.",stage:"Series A",total:"~$30M+",inv:"Not all disclosed; customers U.S. Army, DARPA, NASA JPL, Palantir."},
+"Repli5":{diff:"3D simulation plus generative AI for perception data, focused on automotive/ADAS and defense.",team:"Based in Gothenburg, Sweden.",stage:"Seed",total:"~$2.5M (per your shortlist)",inv:"Not publicly disclosed."},
+"Parallel Domain":{diff:"Programmatic synthetic sensor data tuned for AV and ADAS perception.",team:"Founded 2017 by Kevin McNamara (CEO), ex-Apple Special Projects Group.",stage:"Series B",total:"~$45M+",inv:"incl. Andreessen Horowitz, Costanoa Ventures, Foundry Group."},
+"Applied Intuition":{diff:"Full autonomy dev/sim/validation toolchain across automotive and defense; very well capitalized.",team:"Founded 2017 by Qasar Younis (CEO, ex-Google, ex-YC COO) and Peter Ludwig.",stage:"Series F (~$15B valuation, 2025)",total:"~$600M+",inv:"incl. Lux Capital, Andreessen Horowitz, General Catalyst, Kleiner Perkins, Porsche, Elad Gil."},
+"AgiBot":{diff:"Open-sources large embodied datasets (AgiBot World) and Genie Sim while building its own robots.",team:"Founded 2023 in Shanghai; co-founder Peng Zhihui (Zhihui Jun), ex-Huawei.",stage:"Late-stage (China)",total:"Reportedly hundreds of millions+",inv:"incl. Hillhouse, Tencent, HongShan, BYD, Mirae."},
+"Mantis":{diff:"Physics-based synthetic data for low-resource ML applications.",team:"Not publicly detailed.",stage:"Seed (per your shortlist)",total:"~$5.3M (per your shortlist)",inv:"Not publicly disclosed."},
+"SCAILAB":{diff:"Game-engine toolchain for robotics-perception synthetic data.",team:"Based in Vasteras, Sweden.",stage:"Early",total:"Not publicly disclosed",inv:"Not publicly disclosed."},
+"World Labs":{diff:"Large world models for spatial intelligence, generating explorable 3D worlds.",team:"Founded 2024 by Fei-Fei Li (CEO) with Justin Johnson, Christoph Lassner, Ben Mildenhall.",stage:"Seed/Series A (~$1B+ val)",total:"~$230M+",inv:"incl. Andreessen Horowitz, NEA, Radical Ventures; strategic AMD, NVIDIA."},
+"Decart":{diff:"Real-time generative world models and interactive video.",team:"Founded 2023 by Dean Leitersdorf (CEO) and Moshe Shalev.",stage:"Series A/B (reported ~$3B+ val, 2025)",total:"~$130M+ reportedly",inv:"incl. Sequoia, Benchmark, Zeev Ventures."},
+"Genie 3":{diff:"Frontier world model generating interactive, photorealistic environments on the fly.",team:"A Google DeepMind research model.",stage:"Part of Alphabet/DeepMind",total:"Internal",inv:"Alphabet."},
+"DiffuseDrive":{diff:"Diffusion-based data engine that finds dataset gaps and generates targeted photorealistic imagery.",team:"Founders from Bosch/Porsche L4 autonomous driving; founded in Hungary, now San Francisco.",stage:"Seed",total:"~$3.5-4.5M",inv:"Not all publicly disclosed."},
+"NVIDIA Isaac Sim":{diff:"The default robotics physics-sim platform, tightly coupled to NVIDIA GPUs and Omniverse.",team:"An NVIDIA product.",stage:"Part of NVIDIA",total:"Internal",inv:"NVIDIA."},
+"Genesis":{diff:"Fast, generative, open-source physics platform unifying multiple solvers.",team:"Open-source project from a multi-university collaboration (CMU, Stanford and others).",stage:"Open-source",total:"Non-commercial",inv:"Academic / community."},
+"MuJoCo":{diff:"Gold-standard contact dynamics for RL and control, free since DeepMind open-sourced it.",team:"Created by Emo Todorov (Univ. of Washington); acquired and open-sourced by Google DeepMind in 2021.",stage:"Open-source (DeepMind)",total:"Non-commercial",inv:"Google DeepMind (steward)."},
+"Drake":{diff:"Rigorous model-based design, planning, and verification for robots.",team:"Created by Russ Tedrake at MIT; developed at Toyota Research Institute.",stage:"Open-source (TRI/MIT)",total:"Non-commercial",inv:"Toyota Research Institute (steward)."},
+"NVIDIA":{diff:"The only player supplying datacenter training compute, on-robot edge inference, and the software stack.",team:"Founded 1993 by Jensen Huang, Chris Malachowsky, and Curtis Priem.",stage:"Public (NASDAQ: NVDA)",total:"Public",inv:"Public markets."},
+"Hailo":{diff:"Power-efficient edge AI accelerators for real-time on-device inference.",team:"Founded 2017 in Israel by Orr Danon (CEO), Hadar Zeitlin, and Rami Feig.",stage:"Series C+",total:"~$550M+",inv:"incl. Poalim Equity, Delek Motors, ABB, Gil Agmon, Zeev Ventures."},
+"Nebius":{diff:"AI-native cloud with integrated physical-AI tooling and full-stack GPU infrastructure.",team:"Spun out of Yandex's international assets; led by Arkady Volozh, a Yandex co-founder.",stage:"Public (NASDAQ: NBIS)",total:"Public; raised $700M in 2024",inv:"incl. NVIDIA, Accel, Orbis (2024); public markets."},
+"Intrinsic":{diff:"Industrial-robotics software abstraction (Alphabet) to make robots far easier to program.",team:"An Alphabet company out of the X moonshot factory, led by Wendy Tan White.",stage:"Alphabet company",total:"Internal",inv:"Alphabet."},
+"Encord":{diff:"Multimodal data-development platform, including video, for labeling and curation.",team:"Founded 2020 by Eric Landau (CEO) and Ulrik Stig Hansen.",stage:"Series B",total:"~$50M+",inv:"incl. Next47, CRV, Crane Venture Partners, Y Combinator."},
+"Open X-Embodiment":{diff:"Pools robot demonstration data across 20+ labs into one standardized dataset.",team:"A collaboration led by Google DeepMind with 30+ academic labs.",stage:"Academic / open",total:"Non-commercial",inv:"Academic consortium."},
+"Shotwell AI":{diff:"An observability layer purpose-built for robotics fleets.",team:"YC P26; founders from Tesla and Hugging Face (per your sheet).",stage:"Seed (YC P26; ~$300K ARR)",total:"Not publicly disclosed",inv:"Y Combinator."},
+"Synphony":{diff:"An OS/runtime for physical-AI deployments, starting in agriculture.",team:"YC P26; founder is one of NVIDIA's youngest researchers (per your sheet).",stage:"Seed (YC P26)",total:"Not publicly disclosed",inv:"Y Combinator."}
+};
+
+const map = document.getElementById('map');
+
+function cardEl(c, layerName){
+  const b = document.createElement('button');
+  b.className = 'card' + (c.focus ? ' focus' : '');
+  b.dataset.name = c.n.toLowerCase();
+  b.innerHTML = `<span class="ticker">${c.t}${c.added?'<span class="added">list</span>':''}</span><span class="cname">${c.n}</span><span class="ctag">${c.tag}</span>`;
+  b.addEventListener('click', () => openDrawer(c, layerName));
+  return b;
+}
+
+LAYERS.forEach(L => {
+  const s = document.createElement('section');
+  s.className = 'stratum' + (L.focus ? ' focus' : '') + (L.cross ? ' cross' : '');
+
+  const idx = document.createElement('div');
+  idx.className = 'idx';
+  idx.innerHTML = `<span class="badge">${L.idx}</span>`;
+
+  const head = document.createElement('div');
+  head.className = 'lhead';
+  const count = L.subsegments ? L.subsegments.reduce((a,sg)=>a+sg.companies.length,0) : L.companies.length;
+  head.innerHTML = `<h2>${L.name}</h2><p class="ldesc">${L.desc}</p><div class="lcount">${count} ${count===1?'company':'companies'}</div>`;
+
+  const comp = document.createElement('div');
+  comp.className = 'companies';
+
+  if (L.subsegments){
+    L.subsegments.forEach(sg => {
+      const wrap = document.createElement('div');
+      wrap.className = 'sub';
+      const lbl = document.createElement('div');
+      lbl.className = 'sub-label' + (sg.focus ? ' focus' : '');
+      lbl.textContent = sg.name;
+      const grid = document.createElement('div');
+      grid.className = 'subgrid';
+      sg.companies.forEach(c => grid.appendChild(cardEl(c, L.name + ' · ' + sg.name)));
+      wrap.appendChild(lbl); wrap.appendChild(grid);
+      comp.appendChild(wrap);
+    });
+  } else {
+    L.companies.forEach(c => comp.appendChild(cardEl(c, L.name)));
+  }
+
+  s.appendChild(idx); s.appendChild(head); s.appendChild(comp);
+  map.appendChild(s);
+});
+
+/* ---------- drawer ---------- */
+const drawer = document.getElementById('drawer');
+const backdrop = document.getElementById('backdrop');
+let lastFocused = null;
+
+function openDrawer(c, layerName){
+  lastFocused = document.activeElement;
+  drawer.classList.toggle('focus-co', !!c.focus);
+  document.getElementById('d-ticker').textContent = c.t;
+  document.getElementById('d-name').textContent = c.n;
+  document.getElementById('d-layer').innerHTML = layerName + ' <span class="chip">' + c.tag + '</span>' + (c.added ? ' <span class="chip" style="border-color:var(--teal-dim);color:var(--teal)">from your list</span>' : '');
+  document.getElementById('d-blurb').textContent = c.blurb;
+  document.getElementById('d-product').textContent = c.product;
+  document.getElementById('d-sells').textContent = c.sells;
+  const x = EXTRA[c.n] || {};
+  document.getElementById('d-diff').textContent = x.diff || c.tag;
+  document.getElementById('d-team').textContent = x.team || 'Not publicly disclosed.';
+  document.getElementById('d-stage').textContent = x.stage || '—';
+  document.getElementById('d-total').textContent = x.total || '—';
+  document.getElementById('d-investors').textContent = x.inv || 'Not publicly disclosed.';
+  const nw = document.getElementById('d-note-wrap');
+  if (c.note){ nw.style.display='block'; document.getElementById('d-note').textContent = c.note; }
+  else { nw.style.display='none'; }
+  drawer.classList.add('open'); backdrop.classList.add('open');
+  document.body.style.overflow='hidden';
+  document.getElementById('close').focus();
+}
+function closeDrawer(){
+  drawer.classList.remove('open'); backdrop.classList.remove('open');
+  document.body.style.overflow='';
+  if (lastFocused) lastFocused.focus();
+}
+document.getElementById('close').addEventListener('click', closeDrawer);
+backdrop.addEventListener('click', closeDrawer);
+document.addEventListener('keydown', e => { if (e.key==='Escape' && drawer.classList.contains('open')) closeDrawer(); });
+
+/* ---------- search ---------- */
+const q = document.getElementById('q');
+const noresults = document.getElementById('noresults');
+q.addEventListener('input', () => {
+  const term = q.value.trim().toLowerCase();
+  let total = 0;
+  document.querySelectorAll('.stratum').forEach(strat => {
+    let stratVisible = 0;
+    strat.querySelectorAll('.sub').forEach(sub => {
+      let subVisible = 0;
+      sub.querySelectorAll('.card').forEach(card => {
+        const match = !term || card.dataset.name.includes(term);
+        card.classList.toggle('hide', !match);
+        if (match){ subVisible++; }
+      });
+      sub.classList.toggle('hide', subVisible===0);
+      stratVisible += subVisible;
+    });
+    strat.querySelectorAll(':scope > .companies > .card').forEach(card => {
+      const match = !term || card.dataset.name.includes(term);
+      card.classList.toggle('hide', !match);
+      if (match) stratVisible++;
+    });
+    strat.classList.toggle('hide', stratVisible===0);
+    total += stratVisible;
+  });
+  noresults.classList.toggle('show', total===0);
+});
+</script>
+</body>
+</html>
